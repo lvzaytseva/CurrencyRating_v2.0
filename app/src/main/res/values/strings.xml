@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">Currency Rating v 2.0</string>
+    <string name="updateButton">Обновить</string>
+    <string name="settingsButton">Настройки</string>
+    <string name="title_activity_settings">SettingsActivity</string>
+    <!--
+    This string is used for square devices and overridden by hello_world in
+    values-round/strings.xml for round devices.
+    -->
+    <string name="hello_world">Hello Square World!</string>
+    <string name="settings">Настройки:</string>
+    <string name="update_frequency">Частота обновления:</string>
+    <string name="apply_button">Применить</string>
+    <string name="reset_button">Сброс</string>
+    <string name="text_view_limit">Количество:</string>
+    
+    <string-array name="frequency">
+        <item>30 сек</item>
+        <item>1 мин</item>
+        <item>2 мин</item>
+        <item>3 мин</item>
+        <item>4 мин</item>
+        <item>5 мин</item>
+        <item>6 мин</item>
+        <item>7 мин</item>
+        <item>8 мин</item>
+        <item>9 мин</item>
+        <item>10 мин</item>
+</string-array>
+    <string-array name="limit">
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>20</item>
+        <item>25</item>
+        <item>30</item>
+        <item>35</item>
+        <item>45</item>
+        <item>50</item>
+    </string-array>
+</resources>
