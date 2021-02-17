@@ -4,12 +4,10 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
     tools:context=".MainActivity">
 
 
     <Button
-        android:id="@+id/updateButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="updateButtonClicked"
@@ -47,7 +45,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/purple_500"
-        android:paddingLeft="4dp"
+        android:paddingStart="4dp"
         android:text="@string/settings"
         android:textColor="@color/white"
         android:textSize="18sp"
