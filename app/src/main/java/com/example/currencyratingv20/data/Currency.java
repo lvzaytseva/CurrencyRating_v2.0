@@ -1,72 +1,49 @@
 package com.example.currencyratingv20.data;
 
+import java.math.BigDecimal;
 import java.util.Objects;
 
 import androidx.annotation.Nullable;
 
 public class Currency implements Comparable<Currency> {
-    String name;
-    String dynamics;
-    double price;
+    private final String name;
+    private BigDecimal dynamics;
+    private BigDecimal price;
 
-    public Currency()
-    {
-        this.name = "";
-        this.dynamics = "N/A";
-        this.price = 0;
-    }
-    public Currency(String name, double price)
-    {
+    public Currency(String name, BigDecimal price) {
         this.name = name;
         this.price = price;
-        this.dynamics = "N/A";
-    }
-    public Currency(String name, double price, String dynamics)
-    {
-        this.name = name;
-        this.price = price;
-        this.dynamics = dynamics;
-    }
-    public Currency (Currency currency)
-    {
-        this.name = currency.getName();
-        this.price = currency.getPrice();
-        this.dynamics = currency.getDynamics();
+        this.dynamics = null;
     }
 
-    public String getDynamics()
-    {
+    public BigDecimal getDynamics() {
         return dynamics;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setDynamics(String dynamics) {
+    public void setDynamics(BigDecimal dynamics) {
         this.dynamics = dynamics;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
-    }
-
-    public boolean equalCurr(Currency currency)
-    {
-        return this.name.equals(currency.name);
     }
 
     @Override
     public boolean equals(@Nullable Object obj) {
-        if (obj == this)
+        if (obj == this) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null || getClass() != obj.getClass()) {
             return false;
+        }
         Currency temp = (Currency) obj;
             return this.name.equals(temp.name);
     }
@@ -78,16 +55,12 @@ public class Currency implements Comparable<Currency> {
 
     @Override
     public int compareTo(Currency o) {
-        if (o.getDynamics().equals("N/A"))
+        if (o.getDynamics() == null)
             return -1;
-        else if (this.getDynamics().equals("N/A"))
+        else if (this.getDynamics() == null)
                 return 1;
         else {
-            int compare = Double.compare(Double.parseDouble(o.getDynamics()), Double.parseDouble(this.getDynamics()));
-            return compare;
+            return o.getDynamics().compareTo(this.getDynamics());
         }
             }
-
-
-
 }
