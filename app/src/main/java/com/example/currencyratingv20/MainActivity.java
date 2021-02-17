@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -26,38 +27,37 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<JSONObject> {
 
-    private RecyclerView recyclerViewCurrency;
-    private ArrayList<Currency> currList = new ArrayList<>();
+    private List<Currency> currList = new ArrayList<>();
     private static final int LOADER_ID = 1;
     private LoaderManager loaderManager;
     private CurrAdapter adapter;
     private Timer timer;
-    private UploadTimerTask timerTask;
     private int timerPeriod = 600000;
     private Spinner spinnerFrequency;
     private Spinner spinnerLimit;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        recyclerViewCurrency = findViewById(R.id.recyclerViewCurrency);
+        RecyclerView recyclerViewCurrency = findViewById(R.id.recyclerViewCurrency);
         adapter = new CurrAdapter(currList);
         recyclerViewCurrency.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewCurrency.setAdapter(adapter);
-        loaderManager = LoaderManager.getInstance(this);
+
         spinnerFrequency = findViewById(R.id.spinnerFrequency);
         spinnerLimit = findViewById(R.id.spinnerLimit);
         spinnerFrequency.setSelection(10);
         spinnerLimit.setSelection(0);
+
+        loaderManager = LoaderManager.getInstance(this);
         downloadData();
         timer = new Timer();
-        timerTask = new UploadTimerTask();
+        UpdateTimerTask timerTask = new UpdateTimerTask();
         timer.schedule(timerTask, timerPeriod, timerPeriod);
     }
-    private void downloadData()
-    {
+
+    private void downloadData() {
         URL url = NetworkUtils.buildURL();
         Bundle bundle = new Bundle();
         bundle.putString("url", url.toString());
@@ -72,11 +72,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(@NonNull Loader<JSONObject> loader, JSONObject data) {
-
-        if (currList.isEmpty())
+        if (currList.isEmpty()) {
             currList = JSONUtils.getDataFromJSON(data, currList);
-        else {
-            ArrayList<Currency> tempList = new ArrayList<>();
+        } else {
+            List<Currency> tempList = new ArrayList<>();
             tempList = JSONUtils.getDataFromJSON(data, tempList);
             countDynamics(tempList);
             Collections.sort(currList);
@@ -91,22 +90,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     public void updateButtonClicked(View view) {
         downloadData();
-        if (timer != null)
+        if (timer != null) {
             timer.cancel();
+        }
         timer = new Timer();
-        UploadTimerTask timerTask = new UploadTimerTask();
+        UpdateTimerTask timerTask = new UpdateTimerTask();
         timer.schedule(timerTask, timerPeriod, timerPeriod);
     }
 
-    private void countDynamics(ArrayList<Currency> tempList) {
-        for (int i = 0; i < tempList.size(); i++ ) {
-            if (currList.contains(tempList.get(i))) {
-                int j = currList.indexOf(tempList.get(i));
-                currList.get(j).setDynamics((String.format("%.4f", tempList.get(i).getPrice() - currList.get(j).getPrice())).replace(',', '.')); // надо избавиться от этого...
-                currList.get(j).setPrice(tempList.get(i).getPrice());
+    private void countDynamics(List<Currency> tempList) {
+        for (Currency currency : tempList) {
+            if (currList.contains(currency)) {
+                int j = currList.indexOf(currency);
+                currList.get(j).setDynamics(currency.getPrice().subtract(currList.get(j).getPrice()));
+                currList.get(j).setPrice(currency.getPrice());
+            } else {
+                currList.add(currency);
             }
-            else
-                currList.add(tempList.get(i));
         }
         if (currList.size() > NetworkUtils.getLimitValue()) {
             currList.subList(NetworkUtils.getLimitValue(), currList.size()).clear();
@@ -115,19 +115,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     public void applyButtonClicked(View view) {
         int freq = (int)spinnerFrequency.getSelectedItemId();
-        if (freq == 0)
+
+        if (freq == 0) {
             timerPeriod = 30000;
-        else
-            timerPeriod = freq*60000;
+        } else {
+            timerPeriod = freq * 60000;
+        }
         int limit = Integer.parseInt(spinnerLimit.getSelectedItem().toString());
         NetworkUtils.setLimitValue(limit);
         downloadData();
-        if (timer != null)
+        if (timer != null) {
             timer.cancel();
+        }
         timer = new Timer();
-        UploadTimerTask timerTask = new UploadTimerTask();
+        UpdateTimerTask timerTask = new UpdateTimerTask();
         timer.schedule(timerTask, timerPeriod, timerPeriod);
-
     }
 
     public void resetButtonClicked(View view) {
@@ -135,19 +137,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         spinnerLimit.setSelection(0);
     }
 
-    private class UploadTimerTask extends TimerTask {
-
+    private class UpdateTimerTask extends TimerTask {
         @Override
         public void run() {
-            runOnUiThread(new Runnable() {
-                public void run() {
-                    downloadData();
-                }
-            });
+            runOnUiThread(MainActivity.this::downloadData);
         }
-
     }
-
-
-
 }
