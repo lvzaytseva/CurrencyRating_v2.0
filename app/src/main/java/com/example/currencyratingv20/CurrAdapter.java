@@ -7,16 +7,16 @@ import android.widget.TextView;
 
 import com.example.currencyratingv20.data.Currency;
 
-import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 public class CurrAdapter extends RecyclerView.Adapter<CurrAdapter.CurrViewHolder> {
+    private final List<Currency> currList;
 
-    private ArrayList<Currency> currList;
-
-    public CurrAdapter(ArrayList<Currency> currList) {
+    public CurrAdapter(List<Currency> currList) {
         this.currList = currList;
     }
 
@@ -31,8 +31,8 @@ public class CurrAdapter extends RecyclerView.Adapter<CurrAdapter.CurrViewHolder
     public void onBindViewHolder(@NonNull CurrViewHolder holder, int position) {
         Currency currency = currList.get(position);
         holder.textViewName.setText(currency.getName());
-        holder.textViewPrice.setText(String.format("%.2f", currency.getPrice()));
-        holder.textViewDynamics.setText(currency.getDynamics());
+        holder.textViewPrice.setText(String.format(Locale.US, "%.2f", currency.getPrice()));
+        holder.textViewDynamics.setText(String.format(Locale.US, "%.2f", currency.getDynamics()));
     }
 
     @Override
@@ -40,15 +40,13 @@ public class CurrAdapter extends RecyclerView.Adapter<CurrAdapter.CurrViewHolder
         return currList.size();
     }
 
-    class CurrViewHolder extends RecyclerView.ViewHolder{
-
-        private TextView textViewName;
-        private TextView textViewPrice;
-        private TextView textViewDynamics;
+    static class CurrViewHolder extends RecyclerView.ViewHolder{
+        private final TextView textViewName;
+        private final TextView textViewPrice;
+        private final TextView textViewDynamics;
 
         public CurrViewHolder(@NonNull View itemView) {
             super(itemView);
-
             textViewName = itemView.findViewById(R.id.textViewName);
             textViewPrice = itemView.findViewById(R.id.textViewPrice);
             textViewDynamics = itemView.findViewById(R.id.textViewDynamics);
