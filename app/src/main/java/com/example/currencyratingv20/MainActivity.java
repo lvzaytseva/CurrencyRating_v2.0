@@ -1,6 +1,7 @@
 package com.example.currencyratingv20;
 
 import android.os.Bundle;
+import android.util.ArrayMap;
 import android.view.View;
 import android.widget.Spinner;
 
@@ -10,10 +11,8 @@ import com.example.currencyratingv20.utils.NetworkUtils;
 
 import org.json.JSONObject;
 
+import java.math.BigDecimal;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -27,7 +26,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<JSONObject> {
 
-    private List<Currency> currList = new ArrayList<>();
+    private ArrayMap<Currency, BigDecimal> currencyArrayMap = new ArrayMap<>();
     private static final int LOADER_ID = 1;
     private LoaderManager loaderManager;
     private CurrAdapter adapter;
@@ -39,9 +38,15 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setupUI();
+        downloadData();
+    }
+
+    private void setupUI() {
         setContentView(R.layout.activity_main);
         RecyclerView recyclerViewCurrency = findViewById(R.id.recyclerViewCurrency);
-        adapter = new CurrAdapter(currList);
+
+        adapter = new CurrAdapter(currencyArrayMap);
         recyclerViewCurrency.setLayoutManager(new LinearLayoutManager(this));
         recyclerViewCurrency.setAdapter(adapter);
 
@@ -51,10 +56,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         spinnerLimit.setSelection(0);
 
         loaderManager = LoaderManager.getInstance(this);
-        downloadData();
-        timer = new Timer();
-        UpdateTimerTask timerTask = new UpdateTimerTask();
-        timer.schedule(timerTask, timerPeriod, timerPeriod);
     }
 
     private void downloadData() {
@@ -62,6 +63,23 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         Bundle bundle = new Bundle();
         bundle.putString("url", url.toString());
         loaderManager.restartLoader(LOADER_ID, bundle, this);
+        startTimer();
+    }
+
+    private void startTimer() {
+        if (timer != null) {
+            timer.cancel();
+        }
+        timer = new Timer();
+        UpdateTimerTask timerTask = new UpdateTimerTask();
+        timer.schedule(timerTask, timerPeriod, timerPeriod);
+    }
+
+    private class UpdateTimerTask extends TimerTask {
+        @Override
+        public void run() {
+            runOnUiThread(MainActivity.this::downloadData);
+        }
     }
 
     @NonNull
@@ -72,14 +90,22 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onLoadFinished(@NonNull Loader<JSONObject> loader, JSONObject data) {
-        if (currList.isEmpty()) {
-            currList = JSONUtils.getDataFromJSON(data, currList);
+        if (currencyArrayMap.isEmpty()) {
+            currencyArrayMap = JSONUtils.getDataFromJSON(data, currencyArrayMap);
         } else {
-            List<Currency> tempList = new ArrayList<>();
-            tempList = JSONUtils.getDataFromJSON(data, tempList);
-            countDynamics(tempList);
-            Collections.sort(currList);
+            ArrayMap<Currency, BigDecimal> tempArrayMap = new ArrayMap<>();
+            tempArrayMap = JSONUtils.getDataFromJSON(data, tempArrayMap);
+            countDynamics(tempArrayMap);
+
+    /*        List<Map.Entry<Currency, BigDecimal>> list = new ArrayList(currencyArrayMap.entrySet());
+            Collections.sort(list, new Comparator<Map.Entry<Currency, BigDecimal>>() {
+                @Override
+                public int compare(Map.Entry<Currency, BigDecimal> o1, Map.Entry<Currency, BigDecimal> o2) {
+                    return o1.getValue().compareTo(o2.getValue());
+                }
+            }); */
         }
+
         adapter.notifyDataSetChanged();
         loaderManager.destroyLoader(LOADER_ID);
     }
@@ -88,48 +114,39 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     public void onLoaderReset(@NonNull Loader<JSONObject> loader) {
     }
 
-    public void updateButtonClicked(View view) {
-        downloadData();
-        if (timer != null) {
-            timer.cancel();
-        }
-        timer = new Timer();
-        UpdateTimerTask timerTask = new UpdateTimerTask();
-        timer.schedule(timerTask, timerPeriod, timerPeriod);
-    }
-
-    private void countDynamics(List<Currency> tempList) {
-        for (Currency currency : tempList) {
-            if (currList.contains(currency)) {
-                int j = currList.indexOf(currency);
-                currList.get(j).setDynamics(currency.getPrice().subtract(currList.get(j).getPrice()));
-                currList.get(j).setPrice(currency.getPrice());
+    private void countDynamics(ArrayMap<Currency, BigDecimal> tempArrayMap) {
+        for (int i = 0; i < tempArrayMap.size(); i++) {
+            if (currencyArrayMap.containsKey(tempArrayMap.keyAt(i))) {
+                int j = currencyArrayMap.indexOfKey(tempArrayMap.keyAt(i));
+                BigDecimal dynamics = tempArrayMap.keyAt(i).getPrice().subtract(currencyArrayMap.keyAt(j).getPrice());
+                currencyArrayMap.setValueAt(j, dynamics);
+                currencyArrayMap.keyAt(j).setPrice(tempArrayMap.keyAt(i).getPrice());
             } else {
-                currList.add(currency);
+                currencyArrayMap.put(tempArrayMap.keyAt(i), tempArrayMap.valueAt(i));
             }
         }
-        if (currList.size() > NetworkUtils.getLimitValue()) {
-            currList.subList(NetworkUtils.getLimitValue(), currList.size()).clear();
+
+        if (currencyArrayMap.size() > NetworkUtils.getLimitValue()) {
+            for (int i = NetworkUtils.getLimitValue(); i < currencyArrayMap.size(); i++) {
+                currencyArrayMap.removeAt(i);
+            }
         }
     }
 
-    public void applyButtonClicked(View view) {
-        int freq = (int)spinnerFrequency.getSelectedItemId();
-
-        if (freq == 0) {
-            timerPeriod = 30000;
-        } else {
-            timerPeriod = freq * 60000;
-        }
-        int limit = Integer.parseInt(spinnerLimit.getSelectedItem().toString());
-        NetworkUtils.setLimitValue(limit);
+    public void updateButtonClicked(View view) {
         downloadData();
-        if (timer != null) {
-            timer.cancel();
-        }
-        timer = new Timer();
-        UpdateTimerTask timerTask = new UpdateTimerTask();
-        timer.schedule(timerTask, timerPeriod, timerPeriod);
+    }
+    public void applyButtonClicked(View view) {
+        setParams();
+        downloadData();
+    }
+
+    private void setParams() {
+        int freq = (int)spinnerFrequency.getSelectedItemId();
+        int limit = Integer.parseInt(spinnerLimit.getSelectedItem().toString());
+
+        timerPeriod = freq * 60000;
+        NetworkUtils.setLimitValue(limit);
     }
 
     public void resetButtonClicked(View view) {
@@ -137,10 +154,4 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         spinnerLimit.setSelection(0);
     }
 
-    private class UpdateTimerTask extends TimerTask {
-        @Override
-        public void run() {
-            runOnUiThread(MainActivity.this::downloadData);
-        }
-    }
 }

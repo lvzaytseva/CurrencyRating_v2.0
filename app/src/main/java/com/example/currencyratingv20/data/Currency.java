@@ -5,19 +5,19 @@ import java.util.Objects;
 
 import androidx.annotation.Nullable;
 
-public class Currency implements Comparable<Currency> {
+public class Currency {
+    private final int id;
     private final String name;
-    private BigDecimal dynamics;
     private BigDecimal price;
 
-    public Currency(String name, BigDecimal price) {
+    public Currency(int id, String name, BigDecimal price) {
+        this.id = id;
         this.name = name;
         this.price = price;
-        this.dynamics = null;
     }
 
-    public BigDecimal getDynamics() {
-        return dynamics;
+    public int getId() {
+        return id;
     }
 
     public String getName() {
@@ -26,10 +26,6 @@ public class Currency implements Comparable<Currency> {
 
     public BigDecimal getPrice() {
         return price;
-    }
-
-    public void setDynamics(BigDecimal dynamics) {
-        this.dynamics = dynamics;
     }
 
     public void setPrice(BigDecimal price) {
@@ -45,22 +41,12 @@ public class Currency implements Comparable<Currency> {
             return false;
         }
         Currency temp = (Currency) obj;
-            return this.name.equals(temp.name);
+            return this.id == temp.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(name);
+        return Objects.hashCode(id);
     }
 
-    @Override
-    public int compareTo(Currency o) {
-        if (o.getDynamics() == null)
-            return -1;
-        else if (this.getDynamics() == null)
-                return 1;
-        else {
-            return o.getDynamics().compareTo(this.getDynamics());
-        }
-            }
 }
